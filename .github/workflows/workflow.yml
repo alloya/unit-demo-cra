@@ -1,6 +1,6 @@
 name: SHRI-CI
 run-name: ${{ github.actor }} is starting tests 🚀
-on: pull_request_target
+on: pull_request
 jobs:
   test:
     runs-on: ubuntu-latest
