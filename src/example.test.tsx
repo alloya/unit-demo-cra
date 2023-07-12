@@ -34,11 +34,16 @@ it("если добавить элемент, он появляется в сп�
 
   const { getByTestId, getAllByTestId } = render(application);
 
-  await events.type(getByTestId("input-add"), "test2");
+  await events.type(getByTestId("input-add"), "Сделать домашку");
 
   await events.click(getByTestId("button-add"));
 
   const items = getAllByTestId("list-item");
 
   expect(items.map((el) => el.textContent)).toContain("Сделать домашку");
+});
+
+it("fails", async () => {
+
+  expect(true).toBe(false);
 });
