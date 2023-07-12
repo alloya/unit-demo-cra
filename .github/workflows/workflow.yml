@@ -5,5 +5,16 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
+      - name: checkout repository
+        uses: actions/checkout@v3
+
+      - name: setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: install packages
+        run: npm ci
+
       - name: run tests
-        run: npm test-ci
+        run: npm run test-ci
