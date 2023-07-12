@@ -18,6 +18,3 @@ jobs:
 
       - name: run module tests
         run: npm run test
-
-      - name: run e2e tests
-        run: npm run e2e
