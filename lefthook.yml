@@ -1,8 +1,8 @@
-pre-commit:
+commit-msg:
   parallel: true
   commands:
-    lint:
-      run: npm run commitlint
+    lint-commit:
+      run: npx commitlint --edit
 
 
 # EXAMPLE USAGE:
