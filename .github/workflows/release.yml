@@ -41,18 +41,6 @@ jobs:
           echo "::set-output name=previous::$(git describe --tags --abbrev=0 $(git rev-list --tags --skip=1 --max-count=1))"
         shell: bash
 
-      - name: Run module tests
-        run: npm run test-ci
-        continue-on-error: false
-
-      - name: Run e2e tests with retries
-        uses: nick-invision/retry@v2
-        with:
-          timeout_minutes: 1
-          max_attempts: 3
-          retry_on: timeout
-          command: npm run e2e-ci
-
       - name: Generate Changelog
         id: changelog
         uses: metcalfc/changelog-generator@v4.1.0
@@ -65,7 +53,35 @@ jobs:
         id: date
         run: echo "CURRENT_DATE=$(date +%Y-%m-%d)" >> $GITHUB_ENV
 
+      - name: Check if Release Issue exists
+        id: check_issue
+        uses: octokit/graphql-action@v2.x
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+        with:
+          query: |
+            query($owner: String!, $repo: String!, $tagName: String!) {
+              repository(owner: $owner, name: $repo) {
+                issue(number: $tagName) {
+                  number
+                  body
+                }
+              }
+            }
+          variables: |
+            {
+              "owner": "${{ github.repository_owner }}",
+              "repo": "${{ github.event.repository.name }}",
+              "tagName": "${{ github.ref_name }}"
+            }
+
+      - name: Set ISSUE_BODY and ISSUE_NUMBER environment variables
+        run: |
+          echo "ISSUE_BODY=${{ fromJson(steps.check_issue.outputs.data).repository.issue.body }}" >> $GITHUB_ENV
+          echo "ISSUE_NUMBER=${{ fromJson(steps.check_issue.outputs.data).repository.issue.number }}" >> $GITHUB_ENV
+
       - name: Create Release Issue
+        if: env.ISSUE_NUMBER == null
         id: create_issue
         uses: octokit/request-action@v2.x
         with:
@@ -83,19 +99,37 @@ jobs:
             Version: ${{ github.ref_name }}
             Changelog: ${{ steps.changelog.outputs.changelog }}
 
+      - name: Set ISSUE_NUMBER after creation
+        if: env.ISSUE_NUMBER == null
+        run: |
+          echo "ISSUE_NUMBER=${{ fromJson(steps.create_issue.outputs.data).number }}" >> $GITHUB_ENV
+
+      - name: Run module tests
+        run: npm run test-ci
+        continue-on-error: false
+
+      - name: Run e2e tests with retries
+        uses: nick-invision/retry@v2
+        with:
+          timeout_minutes: 1
+          max_attempts: 3
+          retry_on: timeout
+          command: npm run e2e-ci
+
       - name: Update Release Issue
+        if: env.ISSUE_NUMBER != null
         id: update_issue
         uses: octokit/request-action@v2.x
         with:
           route: PATCH /repos/{owner}/{repo}/issues/{issue_number}
           owner: ${{ github.repository_owner }}
           repo: ${{ github.event.repository.name }}
-          issue_number: ${{ fromJson(steps.create_issue.outputs.data).number }}
+          issue_number: ${{ env.ISSUE_NUMBER }}
           body: ${{ toJSON(env.REQUEST_BODY) }}
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
           REQUEST_BODY: |
-            ${{ fromJson(steps.create_issue.outputs.data).body }}
+            ${{ env.ISSUE_BODY }}
             Test results: [Link to test results](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
 
       - name: Build
