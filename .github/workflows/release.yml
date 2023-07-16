@@ -36,7 +36,7 @@ jobs:
         with:
           route: POST /repos/{owner}/{repo}/issues
           owner: ${{ github.repository_owner }}
-          repo: ${{ github.repository }}
+          repo: ${{ github.event.repository.name }}
           title: "Release ${{ github.ref }}"
           body: ${{ toJSON(env.REQUEST_BODY) }}
           labels: RELEASE
