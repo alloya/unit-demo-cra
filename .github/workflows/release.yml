@@ -36,6 +36,18 @@ jobs:
           echo "TAG=$TAG" >> $GITHUB_ENV
         shell: bash
 
+      - name: Run module tests
+        run: npm run test-ci
+        continue-on-error: false
+
+      - name: Run e2e tests with retries
+        uses: nick-invision/retry@v2
+        with:
+          timeout_minutes: 1
+          max_attempts: 3
+          retry_on: timeout
+          command: npm run e2e-ci
+
       - name: Generate Changelog
         id: changelog
         uses: metcalfc/changelog-generator@v4.1.0
@@ -61,15 +73,6 @@ jobs:
             Release Date: ${{ github.event.commits[0].timestamp }}
             Version: ${{ github.ref_name }}
             Changelog: ${{ steps.changelog.outputs.changelog }}
-
-
-      - name: Run module tests
-        run: npm run test-ci
-        continue-on-error: false
-
-      - name: Run e2e tests
-        run: npm run e2e-ci
-        continue-on-error: false
 
       - name: Update Release Issue
         id: update_issue
