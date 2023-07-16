@@ -27,7 +27,7 @@ jobs:
           route: POST /repos/{owner}/{repo}/issues
           owner: ${{ github.repository_owner }}
           repo: ${{ github.event.repository.name }}
-          title: "Release ${{ github.ref }}"
+          title: "Release ${{ github.action_ref }}"
           body: ${{ toJSON(env.REQUEST_BODY) }}
           labels: '["RELEASE"]'
         env:
@@ -35,7 +35,7 @@ jobs:
           REQUEST_BODY: |
             Release Author: ${{ github.actor }}
             Release Date: ${{ github.event.commits[0].timestamp }}
-            Version: ${{ github.ref }}
+            Version: ${{ github.action_ref }}
             Changelog: ${{ steps.changelog.outputs.changelog }}
 
       - name: Setup Node.js
@@ -71,7 +71,7 @@ jobs:
           github_token: ${{ secrets.RELEASE_TOKEN }}
           publish_dir: ./public
 
-      - name: Update Release Issue
+      - name: Close Release Issue
         id: close_issue
         uses: octokit/request-action@v2.x
         with:
@@ -80,17 +80,5 @@ jobs:
           repo: ${{ github.event.repository.name }}
           issue_number: ${{ fromJson(steps.create_issue.outputs.data).number }}
           state: closed
-
-      # - name: Create Release
-      #   uses: ncipollo/release-action@v1
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
-      #   with:
-      #     token: ${{ secrets.RELEASE_TOKEN }}
-      #     tag: ${{ github.ref_name }}
-      #     artifacts: "${{ github.event.repository.name }}-${{ steps.setup_sp.outputs.plugin-version }}.zip"
-      #     body: ${{ steps.changelog.outputs.changes }}
-      #     draft: false
-      #     allowUpdates: true
-      #     prerelease: false
-      #     replacesArtifacts: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
