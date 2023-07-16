@@ -10,15 +10,34 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm ci
+
       - name: Check out code
         uses: actions/checkout@v3
 
-        
+      - name: Create Release Branch
+        run: |
+          git checkout -b "Release-${{ github.ref_name }}"
+          git push origin "Release-${{ github.ref_name }}"
+
+      - name: Get previous tag
+        id: previoustag
+        run: echo "::set-output name=tag::$(git describe --tags --abbrev=0 HEAD^)"
+        shell: bash
+
       - name: Generate Changelog
         id: changelog
         uses: metcalfc/changelog-generator@v4.1.0
         with:
           myToken: ${{ secrets.RELEASE_TOKEN }}
+          head-ref: ${{ github.ref_name }}
+          base-ref: ${{ steps.previoustag.outputs.tag }}
 
       - name: Create Release Issue
         id: create_issue
@@ -38,13 +57,6 @@ jobs:
             Version: ${{ github.ref_name }}
             Changelog: ${{ steps.changelog.outputs.changelog }}
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
-
-      - name: Install dependencies
-        run: npm ci
 
       - name: Run tests
         run: npm run test-ci
@@ -65,11 +77,14 @@ jobs:
             ${{ fromJson(steps.create_issue.outputs.data).body }}
             Test results: [Link to test results](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
 
+      - name: Build
+        run: npm run build
+
       - name: Publish to GH Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.RELEASE_TOKEN }}
-          publish_dir: ./public
+          publish_dir: ./build
 
       - name: Close Release Issue
         id: close_issue
