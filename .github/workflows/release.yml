@@ -75,7 +75,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
           REQUEST_BODY: |
             Release Author: ${{ github.actor }}
-            Release Date: ${{ github.event.commits[0].timestamp }}
+            Release Date: $(date +%Y-%m-%d)
             Version: ${{ github.ref_name }}
             Changelog: ${{ steps.changelog.outputs.changelog }}
 
