@@ -39,7 +39,7 @@ jobs:
           repo: ${{ github.event.repository.name }}
           title: "Release ${{ github.ref }}"
           body: ${{ toJSON(env.REQUEST_BODY) }}
-          labels: ['RELEASE']
+          labels: '["RELEASE"]'
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
           REQUEST_BODY: |
