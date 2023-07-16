@@ -38,15 +38,16 @@ jobs:
           owner: ${{ github.repository_owner }}
           repo: ${{ github.repository }}
           title: "Release ${{ github.ref }}"
-          body: |
+          body: ${{ toJSON(env.REQUEST_BODY) }}
+          labels: RELEASE
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          REQUEST_BODY: |
             Release Author: ${{ github.actor }}
             Release Date: ${{ github.event.commits[0].timestamp }}
             Version: ${{ github.ref }}
             Changelog: ${{ steps.changelog.outputs.changelog }}
             Test results: [Link to test results](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
-          labels: RELEASE
-        env:
-          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
 
       - name: Publish to GH Pages
         uses: peaceiris/actions-gh-pages@v3
@@ -73,16 +74,16 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
 
-      - name: Create Release
-        uses: ncipollo/release-action@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
-        with:
-          token: ${{ secrets.RELEASE_TOKEN }}
-          tag: ${{ github.ref_name }}
-          artifacts: "${{ github.event.repository.name }}-${{ steps.setup_sp.outputs.plugin-version }}.zip"
-          body: ${{ steps.changelog.outputs.changes }}
-          draft: false
-          allowUpdates: true
-          prerelease: false
-          replacesArtifacts: true
+      # - name: Create Release
+      #   uses: ncipollo/release-action@v1
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+      #   with:
+      #     token: ${{ secrets.RELEASE_TOKEN }}
+      #     tag: ${{ github.ref_name }}
+      #     artifacts: "${{ github.event.repository.name }}-${{ steps.setup_sp.outputs.plugin-version }}.zip"
+      #     body: ${{ steps.changelog.outputs.changes }}
+      #     draft: false
+      #     allowUpdates: true
+      #     prerelease: false
+      #     replacesArtifacts: true
