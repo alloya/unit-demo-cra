@@ -110,10 +110,11 @@ jobs:
             Version: ${{ github.ref_name }}
             Changelog: ${{ steps.changelog.outputs.changelog }}
 
-      - name: Set ISSUE_NUMBER after creation
+      - name: Set ISSUE_NUMBER and ISSUE_BODY after creation
         if: env.ISSUE_NUMBER == null
         run: |
           echo "ISSUE_NUMBER=${{ fromJson(steps.create_issue.outputs.data).number }}" >> $GITHUB_ENV
+          echo "ISSUE_BODY=${{ fromJson(steps.create_issue.outputs.data).body }}" >> $GITHUB_ENV
 
       - name: Run module tests
         run: npm run test-ci
