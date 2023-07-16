@@ -38,7 +38,7 @@ it("если добавить элемент, он появляется в сп�
 
   await events.click(getByTestId("button-add"));
 
-  const items = getAllByTestId("list-item");
+  const items = getAllByTestId("list-item1");
 
   expect(items.map((el) => el.textContent)).toContain("Сделать домашку");
 });
