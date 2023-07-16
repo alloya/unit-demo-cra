@@ -12,17 +12,7 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@v3
-        
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run tests
-        run: npm run test-ci
         
       - name: Generate Changelog
         id: changelog
@@ -47,6 +37,32 @@ jobs:
             Release Date: ${{ github.event.commits[0].timestamp }}
             Version: ${{ github.ref }}
             Changelog: ${{ steps.changelog.outputs.changelog }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm run test-ci
+        continue-on-error: false
+
+      - name: Update Release Issue
+        id: update_issue
+        uses: octokit/request-action@v2.x
+        with:
+          route: PATCH /repos/{owner}/{repo}/issues/{issue_number}
+          owner: ${{ github.repository_owner }}
+          repo: ${{ github.event.repository.name }}
+          issue_number: ${{ fromJson(steps.create_issue.outputs.data).number }}
+          body: ${{ toJSON(env.REQUEST_BODY) }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          REQUEST_BODY: |
+            ${{ fromJson(steps.create_issue.outputs.data).body }}
             Test results: [Link to test results](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
 
       - name: Publish to GH Pages
@@ -56,23 +72,14 @@ jobs:
           publish_dir: ./public
 
       - name: Update Release Issue
-        id: update_issue
+        id: close_issue
         uses: octokit/request-action@v2.x
         with:
           route: PATCH /repos/{owner}/{repo}/issues/{issue_number}
           owner: ${{ github.repository_owner }}
-          repo: ${{ github.repository }}
+          repo: ${{ github.event.repository.name }}
           issue_number: ${{ fromJson(steps.create_issue.outputs.data).number }}
-          body: |
-            Release Author: ${{ github.actor }}
-            Release Date: ${{ github.event.commits[0].timestamp }}
-            Version: ${{ github.ref }}
-            Changelog: ${{ steps.changelog.outputs.changelog }}
-            Test results: [Link to test results](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
-            Deployment: [Link to deployment](https://${{ github.repository_owner }}.github.io/${{ github.repository }})
           state: closed
-        env:
-          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
 
       # - name: Create Release
       #   uses: ncipollo/release-action@v1
