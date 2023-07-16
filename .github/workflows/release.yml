@@ -110,12 +110,6 @@ jobs:
             Version: ${{ github.ref_name }}
             Changelog: ${{ steps.changelog.outputs.changelog }}
 
-      - name: Set ISSUE_NUMBER and ISSUE_BODY after creation
-        if: env.ISSUE_NUMBER == null
-        run: |
-          echo "ISSUE_NUMBER=${{ fromJson(steps.create_issue.outputs.data).number }}" >> $GITHUB_ENV
-          echo "ISSUE_BODY=${{ fromJson(steps.create_issue.outputs.data).body }}" >> $GITHUB_ENV
-
       - name: Run module tests
         run: npm run test-ci
         continue-on-error: false
@@ -130,18 +124,34 @@ jobs:
 
       - name: Update Release Issue
         if: env.ISSUE_NUMBER != null
-        id: update_issue
+        id: update_issue_existing
         uses: octokit/request-action@v2.x
         with:
           route: PATCH /repos/{owner}/{repo}/issues/{issue_number}
           owner: ${{ github.repository_owner }}
           repo: ${{ github.event.repository.name }}
           issue_number: ${{ env.ISSUE_NUMBER }}
-          body: ${{ toJSON(env.REQUEST_BODY) }}
+          body: ${{ steps.format_body.outputs.REQUEST_BODY }}
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
           REQUEST_BODY: |
             ${{ env.ISSUE_BODY }}
+            Test results: [Link to test results](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+        
+      - name: Update Release Issue
+        if: env.ISSUE_NUMBER == null
+        id: update_issue_new
+        uses: octokit/request-action@v2.x
+        with:
+          route: PATCH /repos/{owner}/{repo}/issues/{issue_number}
+          owner: ${{ github.repository_owner }}
+          repo: ${{ github.event.repository.name }}
+          issue_number: ${{ fromJson(steps.create_issue.outputs.data).number }}
+          body: ${{ toJSON(env.REQUEST_BODY) }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          REQUEST_BODY: |
+            ${{ fromJson(steps.create_issue.outputs.data).body }}
             Test results: [Link to test results](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
 
       - name: Build
