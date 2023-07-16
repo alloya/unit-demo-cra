@@ -63,8 +63,12 @@ jobs:
             Changelog: ${{ steps.changelog.outputs.changelog }}
 
 
-      - name: Run tests
+      - name: Run module tests
         run: npm run test-ci
+        continue-on-error: false
+
+      - name: Run e2e tests
+        run: npm run e2e-ci
         continue-on-error: false
 
       - name: Update Release Issue
