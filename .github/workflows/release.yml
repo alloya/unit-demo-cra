@@ -27,7 +27,7 @@ jobs:
           route: POST /repos/{owner}/{repo}/issues
           owner: ${{ github.repository_owner }}
           repo: ${{ github.event.repository.name }}
-          title: "Release ${{ github.action_ref }}"
+          title: "Release ${{ github.ref_name }}"
           body: ${{ toJSON(env.REQUEST_BODY) }}
           labels: '["RELEASE"]'
         env:
@@ -35,7 +35,7 @@ jobs:
           REQUEST_BODY: |
             Release Author: ${{ github.actor }}
             Release Date: ${{ github.event.commits[0].timestamp }}
-            Version: ${{ github.action_ref }}
+            Version: ${{ github.ref_name }}
             Changelog: ${{ steps.changelog.outputs.changelog }}
 
       - name: Setup Node.js
