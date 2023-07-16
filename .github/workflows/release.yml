@@ -60,25 +60,36 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
         with:
           query: |
-            query($owner: String!, $repo: String!, $tagName: String!) {
+            query($owner: String!, $repo: String!) {
               repository(owner: $owner, name: $repo) {
-                issue(number: $tagName) {
-                  number
-                  body
+                issues(first: 100, states: OPEN, orderBy: {field: CREATED_AT, direction: DESC}, filterBy: {createdBy: $owner}) {
+                  edges {
+                    node {
+                      number
+                      title
+                      body
+                    }
+                  }
                 }
               }
             }
           variables: |
             {
               "owner": "${{ github.repository_owner }}",
-              "repo": "${{ github.event.repository.name }}",
-              "tagName": "${{ github.ref_name }}"
+              "repo": "${{ github.event.repository.name }}"
             }
 
       - name: Set ISSUE_BODY and ISSUE_NUMBER environment variables
         run: |
-          echo "ISSUE_BODY=${{ fromJson(steps.check_issue.outputs.data).repository.issue.body }}" >> $GITHUB_ENV
-          echo "ISSUE_NUMBER=${{ fromJson(steps.check_issue.outputs.data).repository.issue.number }}" >> $GITHUB_ENV
+          issues_data=${{ fromJson(steps.check_issue.outputs.data).repository.issues.edges }}
+          release_title="Release ${{ github.ref_name }}"
+          for issue in issues_data; do
+            if [ "$issue.node.title" == "$release_title" ]; then
+              echo "ISSUE_BODY=$issue.node.body" >> $GITHUB_ENV
+              echo "ISSUE_NUMBER=$issue.node.number" >> $GITHUB_ENV
+              break
+            fi
+          done
 
       - name: Create Release Issue
         if: env.ISSUE_NUMBER == null
