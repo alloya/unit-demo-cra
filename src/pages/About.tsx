@@ -5,10 +5,10 @@ export const About: FC = () => {
   return (
     <>
       <Helmet>
-        <title>About page title</title>
+        <title>New About page</title>
       </Helmet>
-      <h1 data-testid="page-title">About</h1>
-      <p>This is an example application.</p>
+      <h1 data-testid="page-title">Broken About</h1>
+      <p>This is an example application. I'm just looking around.</p>
     </>
   );
 };
